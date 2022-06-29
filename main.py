@@ -4,17 +4,19 @@ import time
 import threading
 from os import abort
 from english_words import english_words_lower_set
+from pymongo import MongoClient
 
 
 class Interface:
 
     def __init__(self):
+        self.name = 'Still need to insert this variable'
         self.root = tk.Tk()
         self.root.title('Speed Typing Test')
         self.root.attributes('-fullscreen', True)
-        self.root.config(bg="#CDAA7D")
         self.root.bind("<Escape>", lambda event: abort())
         self.root.bind("<Return>", self.insert)
+        self.root.config(bg="#CDAA7D")
         self.frame = tk.Frame(self.root)
         self.frame.config(bg="#CDAA7D")
         self.samples = random.sample(list(english_words_lower_set), 5)
@@ -102,7 +104,7 @@ class Interface:
         if self.label.cget('text') == 'Typing Finished!':
             self.running = False
             self.input.config(state='disabled')
-            self.report_insertion
+            self.insert_database()
 
     def time_thread(self):
         initial_time = time.time()
@@ -121,6 +123,20 @@ class Interface:
     def quit(self):
         self.root.destroy()
         abort()
+
+    def insert_database(self):
+        client = MongoClient('localhost', 27017)
+        database = client['speed-typing']
+        data = {
+            'name': self.name,
+            'score_positive': self.scores[0], 
+            'score_negative': self.scores[1]
+        }
+        records = database['records']
+        if records.find_one({'name': data.get('name')}):
+            records.update_one({'name': self.name}, {'$set': {'score_positive': self.scores[0], 'score_negative': self.scores[1]}})
+        else:
+            records.insert_one(data)
 
 
 if __name__ == '__main__':

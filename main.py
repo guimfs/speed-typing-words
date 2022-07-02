@@ -5,6 +5,7 @@ import threading
 from os import abort
 from english_words import english_words_lower_set
 from pymongo import MongoClient
+from tkinter import ttk
 
 
 class Interface:
@@ -20,17 +21,107 @@ class Interface:
         self.root.config(bg="#CDAA7D")
         
         # Miscellaneous variables
+        self.dict = {'Easy (5 words)': 5, 'Medium (10 words)': 10, 'Hard (20 words)': 20}
+        self.scores = [0, 0]
+        self.running = False
+
+        # Creating frame2 (menu)
+        self.frame2 = tk.Frame(self.root)
+        self.frame2.config(bg="#CDAA7D")
+          
+        self.title_f2 = tk.Label(self.frame2, 
+                            text="Menu", 
+                            font=("Gill Sans Ultra Bold", 30),
+                            bg="#CDAA7D",
+                            fg="#8B1A1A")
+        self.title_f2.grid(row=0, column=0, columnspan=3, padx=5, pady=10)
+
+        self.label_f2 = tk.Label(self.frame2, 
+                            text='A simple Speed Typing Game to\n practice your typing technique.', 
+                            font=("Gill Sans Ultra Bold", 25),
+                            bg="#CDAA7D")
+        self.label_f2.grid(row=1, column=0, columnspan=3, padx=5, pady=30)
+
+        self.label_name_f2 = tk.Label(self.frame2, 
+                            text='Insert your name', 
+                            font=("Gill Sans Ultra Bold", 20),
+                            bg="#CDAA7D")
+        self.label_name_f2.grid(row=2, column=0, columnspan=3, padx=5, pady=5)
+
+        self.name_f2 = tk.Entry(self.frame2, justify='center', width=15, font=("Gill Sans Ultra Bold", 19))
+        self.name_f2.grid(row=3, column=0, columnspan=3, padx=10, pady=5)
+        self.name_f2.focus_set()
+
+        self.label_difficulty_f2 = tk.Label(self.frame2, 
+                            text='Select the difficulty', 
+                            font=("Gill Sans Ultra Bold", 20),
+                            bg="#CDAA7D")
+        self.label_difficulty_f2.grid(row=4, column=0, columnspan=3, padx=5, pady=5)
+
+        self.current_var = tk.StringVar()
+        self.difficulty_f2 = ttk.Combobox(self.frame2,
+                            width=15,
+                            textvariable=self.current_var,
+                            font=("Gill Sans Ultra Bold", 19),
+                            values=list(self.dict.keys()),
+                            state='readonly',
+                            justify='center'
+                            )
+        self.difficulty_f2.grid(row=5, column=0, columnspan=3, padx=10, pady=5)
+        self.difficulty_f2.bind("<<ComboboxSelected>>", lambda event: self.test.config(text=self.current_var.get()))
+
+        self.test = tk.Label(self.frame2, 
+                            text='',
+                            font=("Gill Sans Ultra Bold", 20),
+                            bg="#CDAA7D")
+        self.test.grid(row=7, column=0, columnspan=3, padx=5, pady=5)
+
         self.samples = random.sample(list(english_words_lower_set), 5)
         self.samples.append('typing finished!')
-        self.scores = [0, 0]
 
-        # Creating frames
-        self.frame1 = tk.Frame(self.root)
-        self.frame2 = tk.Frame(self.root)
-        self.frame3 = tk.Frame(self.root)
+        self.play_f2 = tk.Button(self.frame2,
+                            text='Play', 
+                            command=self.change_to_game_from_menu,
+                            bg="#9C9C9C",
+                            padx=70,
+                            pady=15,
+                            font=("Gill Sans Ultra Bold", 15),
+                            activebackground='#345',
+                            activeforeground='white',
+                            borderwidth=3,
+                            relief='raised',
+                            )
+        self.play_f2.grid(row=6, column=0, columnspan=1, padx=10, pady=40)
 
-        for frame in (self.frame1, self.frame2, self.frame3):
-            pass
+        self.quit_f2 = tk.Button(self.frame2,
+                            text='Quit', 
+                            command=self.quit,
+                            bg="#9C9C9C",
+                            padx=70,
+                            pady=15,
+                            font=("Gill Sans Ultra Bold", 15),
+                            activebackground='#345',
+                            activeforeground='white',
+                            borderwidth=3,
+                            relief='raised',
+                            )
+        self.quit_f2.grid(row=6, column=2, columnspan=1, padx=10, pady=40)
+
+        self.leaderbord_f2 = tk.Button(self.frame2,
+                            text='Leaderboard', 
+                            command=self.quit,
+                            bg="#9C9C9C",
+                            padx=40,
+                            pady=15,
+                            font=("Gill Sans Ultra Bold", 15),
+                            activebackground='#345',
+                            activeforeground='white',
+                            borderwidth=3,
+                            relief='raised',
+                            )
+        self.leaderbord_f2.grid(row=6, column=1, columnspan=1, padx=10, pady=40)
+
+        self.frame2.pack(expand=True)
 
         # Creating the frame1 (game)
         self.frame1 = tk.Frame(self.root)
@@ -38,10 +129,10 @@ class Interface:
           
         self.title_f1 = tk.Label(self.frame1, 
                             text="Type as fast as you can!", 
-                            font=("Gill Sans Ultra Bold", 25),
+                            font=("Gill Sans Ultra Bold", 30),
                             bg="#CDAA7D",
                             fg="#8B1A1A")
-        self.title_f1.grid(row=0, column=0, columnspan=2, padx=5, pady=70)
+        self.title_f1.grid(row=0, column=0, columnspan=2, padx=5, pady=30)
 
         self.label_f1 = tk.Label(self.frame1, 
                             text=self.samples[0].title(), 
@@ -55,17 +146,16 @@ class Interface:
                             bg="#CDAA7D")
         self.speed_f1.grid(row=3, column=0, columnspan=2, padx=5, pady=10)
 
-        self.input_f1 = tk.Entry(self.frame1, width=40, font=("Gill Sans Ultra Bold", 20))
+        self.input_f1 = tk.Entry(self.frame1, width=20, justify='center' ,font=("Gill Sans Ultra Bold", 20))
         self.input_f1.grid(row=2, column=0, columnspan=2, padx=5, pady=10)
         self.input_f1.bind("<KeyPress>", self.start)
-        self.input_f1.focus_set()
 
         self.reset_f1 = tk.Button(self.frame1,
                             text='Reset', 
                             command=self.reset,
                             bg="#9C9C9C",
-                            padx=100,
-                            pady=25,
+                            padx=70,
+                            pady=15,
                             font=("Gill Sans Ultra Bold", 15),
                             activebackground='#345',
                             activeforeground='white',
@@ -78,8 +168,8 @@ class Interface:
                             text='Menu', 
                             command=self.change_to_menu_from_game,
                             bg="#9C9C9C",
-                            padx=100,
-                            pady=25,
+                            padx=70,
+                            pady=15,
                             font=("Gill Sans Ultra Bold", 15),
                             activebackground='#345',
                             activeforeground='white',
@@ -88,73 +178,73 @@ class Interface:
                             )
         self.quit_f1.grid(row=4, column=1, columnspan=1, padx=5, pady=10)
 
-        # Creating frame2 (menu)
-        self.frame2 = tk.Frame(self.root)
-        self.frame2.config(bg="#CDAA7D", )
-          
-        self.title_f2 = tk.Label(self.frame2, 
-                            text="Menu", 
-                            font=("Gill Sans Ultra Bold", 25),
-                            bg="#CDAA7D",
-                            fg="#8B1A1A")
-        self.title_f2.grid(row=0, column=0, columnspan=2, padx=5, pady=70)
-
-        self.label_f2 = tk.Label(self.frame2, 
-                            text=self.samples[0].title(), 
-                            font=("Gill Sans Ultra Bold", 25),
-                            bg="#CDAA7D")
-        self.label_f2.grid(row=1, column=0, columnspan=2, padx=5, pady=10)
-
-        self.speed_f2 = tk.Label(self.frame2, 
-                            text='0.00 seconds', 
-                            font=("Gill Sans Ultra Bold", 20),
-                            bg="#CDAA7D")
-        self.speed_f2.grid(row=3, column=0, columnspan=2, padx=5, pady=10)
-
-        self.input_f2 = tk.Entry(self.frame2, width=40, font=("Gill Sans Ultra Bold", 20))
-        self.input_f2.grid(row=2, column=0, columnspan=2, padx=5, pady=10)
-        self.input_f2.bind("<KeyPress>", self.start)
-        self.input_f2.focus_set()
-
-        self.reset_f2 = tk.Button(self.frame2,
-                            text='Play', 
-                            command=self.change_to_game_from_menu,
-                            bg="#9C9C9C",
-                            padx=100,
-                            pady=25,
-                            font=("Gill Sans Ultra Bold", 15),
-                            activebackground='#345',
-                            activeforeground='white',
-                            borderwidth=3,
-                            relief='raised',
-                            )
-        self.reset_f2.grid(row=4, column=0, columnspan=1, padx=5, pady=10)
-
-        self.quit_f2 = tk.Button(self.frame2,
-                            text='Quit', 
-                            command=self.quit,
-                            bg="#9C9C9C",
-                            padx=100,
-                            pady=25,
-                            font=("Gill Sans Ultra Bold", 15),
-                            activebackground='#345',
-                            activeforeground='white',
-                            borderwidth=3,
-                            relief='raised',
-                            )
-        self.quit_f2.grid(row=4, column=1, columnspan=1, padx=5, pady=10)
-        self.frame2.pack(expand=True)
-
-        # Creating frame3 (scores database)
+        # Creating frame3 (leaderboard)
 
         # Creating frame4 (final score)
+        self.frame4 = tk.Frame(self.root)
+        self.frame4.config(bg="#CDAA7D")
 
-        # Miscellaneous variables
-        self.name = 'Still need to insert this variable'
-        self.running = False
+        self.title_f4 = tk.Label(self.frame4, 
+                            text="This is your score!", 
+                            font=("Gill Sans Ultra Bold", 30),
+                            bg="#CDAA7D",
+                            fg="#8B1A1A"
+                            )
+        self.title_f4.grid(row=0, column=0, columnspan=3, padx=5, pady=20)
 
-        # Raise
-        self.show_frame(self.frame2)
+        self.scores_label_f4 = tk.Label(self.frame4,
+                            text=self.scores,
+                            font=("Gill Sans Ultra Bold", 30),
+                            bg="#CDAA7D"
+                            )
+        self.scores_label_f4.grid(row=1, column=0, columnspan=3, padx=5, pady=20)
+
+        self.register_f4 = tk.Button(self.frame4,
+                            text='Register score', 
+                            #command=,
+                            bg="#9C9C9C",
+                            padx=30,
+                            pady=15,
+                            font=("Gill Sans Ultra Bold", 15),
+                            activebackground='#345',
+                            activeforeground='white',
+                            borderwidth=3,
+                            relief='raised',
+                            )
+        self.register_f4.grid(row=4, column=0, columnspan=1, padx=10, pady=40)
+
+        self.try_again_f4 = tk.Button(self.frame4,
+                            text='Try again', 
+                            command=self.change_to_game_from_score,
+                            bg="#9C9C9C",
+                            padx=50,
+                            pady=15,
+                            font=("Gill Sans Ultra Bold", 15),
+                            activebackground='#345',
+                            activeforeground='white',
+                            borderwidth=3,
+                            relief='raised',
+                            )
+        self.try_again_f4.grid(row=4, column=1, columnspan=1, padx=10, pady=40)
+
+        self.menu_f4 = tk.Button(self.frame4,
+                            text='Menu', 
+                            command=self.change_to_menu_from_score,
+                            bg="#9C9C9C",
+                            padx=70,
+                            pady=15,
+                            font=("Gill Sans Ultra Bold", 15),
+                            activebackground='#345',
+                            activeforeground='white',
+                            borderwidth=3,
+                            relief='raised',
+                            )
+        self.menu_f4.grid(row=4, column=2, columnspan=1, padx=10, pady=40)
+
+        
+
+                  
+        
 
         # Looping the root
         self.root.mainloop()
@@ -189,10 +279,8 @@ class Interface:
         if self.label_f1.cget('text') == 'Typing Finished!':
             self.running = False
             self.input_f1.config(state='disabled')
-            self.insert_database()
-            self.scores.clear()
-            self.scores = [0, 0]
-
+            self.root.after(1500, self.change_to_score_from_game)
+            
     def time_thread(self):
         """This is a threading method that will run timer"""
         initial_time = time.time()
@@ -215,32 +303,57 @@ class Interface:
         self.root.destroy()
         abort()
 
-    def show_frame(self, frame):
-        """This method will help the frame changing between menu, game, scores database and final score"""
-        frame.tkraise()
-
     def change_to_menu_from_game(self):
         """This method will change to menu screen from game screen"""
         self.frame2.pack(expand = True)
         self.frame1.forget()
+        self.name_f2.focus_set()
+
+    def change_to_score_from_game(self):
+        """This method will change to final score screen from game screen"""
+        self.frame4.pack(expand=True)
+        self.frame1.forget()
+
+    def change_to_game_from_score(self):
+        """Thie method will change to game screen from final score screen"""
+        self.frame1.pack(expand=True)
+        self.frame4.forget()
+        self.reset()
+        self.input_f1.config(state='normal')
+        self.input_f1.focus_get()
+
+    def change_to_menu_from_score(self):
+        """This method will change to menu screen from final score screen"""
+        self.frame2.pack(expand=True)
+        self.frame4.forget()
+        self.name_f2.focus_set()
 
     def change_to_game_from_menu(self):
         """This method will change to game screen from menu screen"""
-        self.frame1.pack(expand = True)
-        self.frame2.forget()
+        if self.name_f2.get() == '':
+            pass
+        else:
+            self.frame1.pack(expand = True)
+            self.frame2.forget()
+            self.input_f1.focus_set()
 
     def insert_database(self):
         """This method will insert a new or update a existent data in a MongoDB database"""
         client = MongoClient('localhost', 27017)
         database = client['speed-typing']
         data = {
-            'name': self.name,
+            'name': self.name_f2.get(),
             'score_positive': self.scores[0], 
             'score_negative': self.scores[1]
         }
         records = database['records']
         if records.find_one({'name': data.get('name')}):
-            records.update_one({'name': self.name}, {'$set': {'score_positive': self.scores[0], 'score_negative': self.scores[1]}})
+            records.update_one({'name': self.name_f2.get()}, {
+                '$set': {
+                    'score_positive': self.scores[0],
+                    'score_negative': self.scores[1]
+                }
+            })
         else:
             records.insert_one(data)
 

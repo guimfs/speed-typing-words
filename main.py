@@ -3,12 +3,29 @@ import random
 import time
 import threading
 from os import abort
+from xml.dom.expatbuilder import theDOMImplementation
 from english_words import english_words_lower_set
 from pymongo import MongoClient
-from tkinter import ttk
+from tkinter import CENTER, ttk
 
 
 class Interface:
+
+    """This will load all datas from MongoDB"""
+    client = MongoClient('localhost', 27017)
+    database = client['speed-typing']
+    records = database['records']
+    list_leader = []
+    all_records = records.find()
+    for item in all_records:
+        list_leader.append(
+            (
+                item.get('name'),
+                item.get('mode'),
+                item.get('accuracy'),
+                item.get('time')
+            )
+        )
 
     def __init__(self):
         """This method is the constructor for frames, labels, buttons and entries"""
@@ -109,7 +126,7 @@ class Interface:
 
         self.leaderbord_f2 = tk.Button(self.frame2,
                             text='Leaderboard', 
-                            command=self.quit,
+                            command=self.change_to_leader_from_menu,
                             bg="#9C9C9C",
                             padx=40,
                             pady=15,
@@ -164,7 +181,7 @@ class Interface:
                             )
         self.reset_f1.grid(row=4, column=0, columnspan=1, padx=5, pady=10)
 
-        self.quit_f1 = tk.Button(self.frame1,
+        self.menu_f1 = tk.Button(self.frame1,
                             text='Menu', 
                             command=self.change_to_menu_from_game,
                             bg="#9C9C9C",
@@ -176,10 +193,70 @@ class Interface:
                             borderwidth=3,
                             relief='raised',
                             )
-        self.quit_f1.grid(row=4, column=1, columnspan=1, padx=5, pady=10)
+        self.menu_f1.grid(row=4, column=1, columnspan=1, padx=5, pady=10)
 
         # Creating frame3 (leaderboard)
+        self.frame3 = tk.Frame(self.root)
+        self.frame3.config(bg="#CDAA7D")
 
+        self.title_f3 = tk.Label(self.frame3, 
+                            text="Leaderboard", 
+                            font=("Gill Sans Ultra Bold", 30),
+                            bg="#CDAA7D",
+                            fg="#8B1A1A"
+                            )
+        self.title_f3.grid(row=0, column=1, columnspan=1, padx=5, pady=20)
+
+        self.list_view_f3 = ttk.Treeview(self.frame3, 
+                            column=('c1', 'c2', 'c3', 'c4'),
+                            show='headings',
+                            height=13,
+                            selectmode='extended',
+                            )
+        self.style_f3 = ttk.Style()
+        self.style_f3.theme_use('clam')
+        self.style_f3.configure("Treeview.Heading",
+                            font=("Gill Sans Ultra Bold", 15),
+                            background="#CB7F19",
+                            fieldbackground="#CB7F19",
+                            )
+        self.style_f3.configure("Treeview", 
+                            background="#CBAD33",
+                            fieldbackground="#CBAD33",
+                            font=("Gill Sans Ultra Bold", 15),
+                            rowheight=30
+                            )
+        self.list_view_f3.column("# 1", anchor=CENTER, stretch=False)
+        self.list_view_f3.heading("# 1", text='Name')
+        self.list_view_f3.column("# 2", anchor=CENTER, stretch=False)
+        self.list_view_f3.heading("# 2", text='Mode')
+        self.list_view_f3.column("# 3", anchor=CENTER, stretch=False)
+        self.list_view_f3.heading("# 3", text='Accuracy')
+        self.list_view_f3.column("# 4", anchor=CENTER, stretch=False)
+        self.list_view_f3.heading("# 4", text='Time')
+        for index, item in enumerate(Interface.list_leader):
+            self.list_view_f3.insert('', 'end', text=str(index), values=item) 
+
+        self.list_view_f3.grid(row=1, column=1, columnspan=1, padx=5, pady=20, sticky='nwes')
+
+        self.menu_f3 = tk.Button(self.frame3,
+                            text='Menu', 
+                            command=self.change_to_menu_from_leader,
+                            bg="#9C9C9C",
+                            padx=70,
+                            pady=15,
+                            font=("Gill Sans Ultra Bold", 15),
+                            activebackground='#345',
+                            activeforeground='white',
+                            borderwidth=3,
+                            relief='raised',
+                            )
+        self.menu_f3.grid(row=2, column=1, columnspan=1, padx=5, pady=10)
+
+
+
+        
+        
         # Creating frame4 (final score)
         self.frame4 = tk.Frame(self.root)
         self.frame4.config(bg="#CDAA7D")
@@ -201,7 +278,7 @@ class Interface:
 
         self.register_f4 = tk.Button(self.frame4,
                             text='Register score', 
-                            #command=,
+                            command=self.insert_database,
                             bg="#9C9C9C",
                             padx=30,
                             pady=15,
@@ -240,12 +317,7 @@ class Interface:
                             relief='raised',
                             )
         self.menu_f4.grid(row=4, column=2, columnspan=1, padx=10, pady=40)
-
-        
-
-                  
-        
-
+                
         # Looping the root
         self.root.mainloop()
 
@@ -286,7 +358,8 @@ class Interface:
         initial_time = time.time()
         while self.running:
             clock = time.time()
-            self.speed_f1.config(text=f'{clock - initial_time:.2f} seconds')
+            self.time = clock - initial_time
+            self.speed_f1.config(text=f'{self.time:.2f} seconds')
 
     def reset(self):
         """This method will reset the objects"""
@@ -330,28 +403,42 @@ class Interface:
 
     def change_to_game_from_menu(self):
         """This method will change to game screen from menu screen"""
-        if self.name_f2.get() == '':
-            pass
-        else:
+        if self.name_f2.get() != '' and self.difficulty_f2.get():
             self.frame1.pack(expand = True)
             self.frame2.forget()
             self.input_f1.focus_set()
+
+    def change_to_leader_from_menu(self):
+        """This method will change to leaderboard screen from menu screen"""
+        self.frame3.pack(expand=True)
+        self.frame2.forget()        
+
+    def change_to_menu_from_leader(self):
+        """This method will change to menu screen from leaderboard screen"""
+        self.frame2.pack(expand=True)
+        self.frame3.forget()
 
     def insert_database(self):
         """This method will insert a new or update a existent data in a MongoDB database"""
         client = MongoClient('localhost', 27017)
         database = client['speed-typing']
+        records = database['records']
         data = {
             'name': self.name_f2.get(),
+            'mode': '',
             'score_positive': self.scores[0], 
-            'score_negative': self.scores[1]
+            'score_negative': self.scores[1],
+            'accuracy': f'{(self.scores[0] / sum(self.scores))*100:.2f}%',
+            'time': round(self.time, 2)
         }
-        records = database['records']
         if records.find_one({'name': data.get('name')}):
             records.update_one({'name': self.name_f2.get()}, {
                 '$set': {
+                    'mode': '',
                     'score_positive': self.scores[0],
-                    'score_negative': self.scores[1]
+                    'score_negative': self.scores[1],
+                    'accuracy': f'{(self.scores[0] / sum(self.scores))*100:.2f}%',
+                    'time': round(self.time, 2)
                 }
             })
         else:
